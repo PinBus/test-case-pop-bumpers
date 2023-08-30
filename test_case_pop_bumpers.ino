@@ -2,6 +2,7 @@
  * Test-Case - Pop Bumpers
  *
  * Version 1.0 (01-12-2021)
+ * Version 1.1 (24-08-2023)
  **/
 
 #include <Wire.h>
