@@ -2,6 +2,7 @@
  * Test-Case - Pop Bumpers
  *
  * Version 1.0 (01-12-2021)
+ * Version 1.1 (24-08-2023)
  **/
 
 #include <Wire.h>
@@ -379,72 +380,11 @@ void update_pop_bumpers() {
     }
 }
 
-/* LEDs */
-
-// Flipper button animation
-LedAnimationStep led_flipper_animation_sequence[4] = {
-    { LedAnimationType::Static, 500, LED_MAX_VALUE },
-    { LedAnimationType::Fade, 200, 0 },
-    { LedAnimationType::Static, 300, 0 },
-    { LedAnimationType::Fade, 200, LED_MAX_VALUE }
-};
-
-LedAnimation led_flipper_animation = {
-    led_flipper_animation_sequence,
-    0,
-    0,
-    0,
-    0,
-    4,
-    PIN_PCA9685_LED_BUTTON_FLIPPER,
-    LedAnimationState::Running
-};
-
-#define LED_ANIMATION_NUMBER_OF 1
-LedAnimation animations[LED_ANIMATION_NUMBER_OF] = {
-    led_flipper_animation
-};
-
 void init_leds() {
     pca9685.setPin(PIN_PCA9685_LED_BUTTON_RED, LED_QUARTER_VALUE, true);
     pca9685.setPin(PIN_PCA9685_LED_BUTTON_YELLOW, LED_QUARTER_VALUE, true);
     pca9685.setPin(PIN_PCA9685_LED_BUTTON_BLUE, LED_QUARTER_VALUE, true);
-}
-
-// Scratchpad pointers for loops iterating over animations and animation steps
-LedAnimation* animation = NULL;
-LedAnimationStep* step = NULL;
-
-// Warning: Hairy code ahead
-void update_leds() {
-    for (uint8_t i = 0; i < LED_ANIMATION_NUMBER_OF; i++) {
-        animation = &animations[i];
-        step = &animation->steps[animation->current_step];
-
-        if (step->type == LedAnimationType::Fade) {
-            // Compute intermediary value of the fade step
-            uint16_t previous_pwm_value = animation->steps[animation->current_step == 0 ? animation->number_of_steps - 1 : animation->current_step - 1].pwm_value;
-            uint32_t time_in = millis() - animation->last_update;
-            animation->current_pwm_value = map(time_in, 0, step->duration, previous_pwm_value, step->pwm_value);
-            pca9685.setPin(animation->pin, animation->current_pwm_value, true);
-        }
-
-        if (millis() - animation->last_update > step->duration) {
-            // Move on to the next animation step if the current step is done
-            animation->last_update = millis();
-            animation->current_step += 1;
-            if (animation->current_step == animation->number_of_steps) {
-                animation->current_step = 0;
-            }
-
-            step = &animation->steps[animation->current_step];
-            if (step->type == LedAnimationType::Static) {
-                // If the step is a static pwm value, set it
-                animation->current_pwm_value = step->pwm_value;
-                pca9685.setPin(animation->pin, step->pwm_value, true);
-            }
-        }
-    }
+    pca9685.setPin(PIN_PCA9685_LED_BUTTON_FLIPPER, LED_MAX_VALUE, true);
 }
 
 /** Serial **/
@@ -531,9 +471,6 @@ void loop()
 
     // Update pop bumpers
     update_pop_bumpers();
-
-    // Update LEDs
-    update_leds();
 
     // Update serial
     update_serial();
